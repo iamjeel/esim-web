@@ -1,29 +1,28 @@
-// PlanSection.js
 import React, { useState } from 'react';
 import QRCodeComponent from './QRCodeComponent';
 
-const PlanSection = () => {
+const PlanSection = ({ selectedNumber }) => { // Accept selectedNumber as a prop
   const [submittedPlan, setSubmittedPlan] = useState('');
   const [showQR, setShowQR] = useState(false);
+  const [sliderValue, setSliderValue] = useState(50); // Initial slider value
+  const [selectedServices, setSelectedServices] = useState([]);
 
-  const updateDataValue = () => {
-    const sliderValue = document.getElementById('dataSlider').value;
-    document.getElementById('dataValue').textContent = `${sliderValue}GB`;
+  const handleSliderChange = (event) => {
+    setSliderValue(event.target.value);
+  };
+
+  const handleServiceChange = (event) => {
+    const service = event.target.value;
+    setSelectedServices((prev) => {
+      if (prev.includes(service)) {
+        return prev.filter((s) => s !== service); // Remove service if already selected
+      } else {
+        return [...prev, service]; // Add service if not selected
+      }
+    });
   };
 
   const handleSubmit = () => {
-    // Get the selected data value
-    const sliderValue = document.getElementById('dataSlider').value;
-    
-    // Get selected services
-    const selectedServices = [];
-    const checkboxes = document.querySelectorAll('.form-check-input');
-    checkboxes.forEach((checkbox) => {
-      if (checkbox.checked) {
-        selectedServices.push(checkbox.nextSibling.textContent.trim());
-      }
-    });
-
     // Construct the plan data for QR code
     const planData = `Data: ${sliderValue}GB, Services: ${selectedServices.join(', ')}`;
     setSubmittedPlan(planData);
@@ -35,7 +34,7 @@ const PlanSection = () => {
       <h2 className="text-center text-teal mb-4">Customize Your Plan</h2>
 
       <div className="text-center mb-4">
-        <h4>Your Selected Number: <span id="selectedNumberDisplay" className="font-weight-bold text-success"></span></h4>
+        <h4>Your Selected Number: <span className="font-weight-bold text-success">{selectedNumber}</span></h4>
       </div>
 
       <div className="text-center mb-4">
@@ -47,17 +46,24 @@ const PlanSection = () => {
           min="10"
           max="150"
           step="10"
-          defaultValue="50"
-          onInput={updateDataValue}
+          value={sliderValue}
+          onChange={handleSliderChange} // Use onChange to update state
         />
-        <p>Selected Data: <span id="dataValue" className="font-weight-bold">50GB</span></p>
+        <p>Selected Data: <span className="font-weight-bold">{sliderValue}GB</span></p>
       </div>
 
       <div className="mb-4">
         <h5 className="text-center text-teal">Choose Additional Services:</h5>
         {['Voicemail Service', 'Calling Service', 'Text Messaging', 'International Calling'].map((service, index) => (
           <div className="form-check" key={index}>
-            <input className="form-check-input" type="checkbox" id={`service-${index}`} />
+            <input 
+              className="form-check-input" 
+              type="checkbox" 
+              id={`service-${index}`} 
+              value={service}
+              checked={selectedServices.includes(service)} // Control checkbox based on state
+              onChange={handleServiceChange} 
+            />
             <label className="form-check-label" htmlFor={`service-${index}`}>{service}</label>
           </div>
         ))}
@@ -67,9 +73,14 @@ const PlanSection = () => {
         <button className="btn btn-lg btn-primary" onClick={handleSubmit}>Submit Plan</button>
       </div>
 
-      {/* Conditionally render QR Code after plan submission */}
+      {/* Summary of selected options before QR Code */}
       {showQR && (
         <div className="text-center mt-4">
+          <h5>Selected Plan Details:</h5>
+          <p><strong>Your Selected Number:</strong> {selectedNumber}</p>
+          <p><strong>Data Limit:</strong> {sliderValue}GB</p>
+          <p><strong>Additional Services:</strong> {selectedServices.length > 0 ? selectedServices.join(', ') : 'None'}</p>
+          
           <h5>Your Plan QR Code:</h5>
           <QRCodeComponent value={submittedPlan} />
         </div>
